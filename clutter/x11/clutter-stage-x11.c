@@ -391,13 +391,32 @@ on_window_scaling_factor_notify (GObject         *settings,
                                  GParamSpec      *pspec,
                                  ClutterStageX11 *stage_x11)
 {
+  gboolean auto_window_scale;
   g_object_get (settings,
-                "window-scaling-factor", &stage_x11->scale_factor,
+                "auto-window-scale",
+                &auto_window_scale,
                 NULL);
 
-  clutter_stage_x11_resize (CLUTTER_STAGE_WINDOW (stage_x11),
-                            stage_x11->xwin_width,
-                            stage_x11->xwin_height);
+  if(auto_window_scale)
+    {
+      g_object_get (settings,
+                    "window-scaling-factor", &stage_x11->scale_factor,
+                    NULL);
+
+      clutter_stage_x11_resize (CLUTTER_STAGE_WINDOW (stage_x11),
+                                stage_x11->xwin_width,
+                                stage_x11->xwin_height);
+    }
+  else
+    {
+      if(stage_x11->scale_factor != 1)
+        {
+          stage_x11->scale_factor = 1;
+          clutter_stage_x11_resize (CLUTTER_STAGE_WINDOW (stage_x11),
+                                    stage_x11->xwin_width,
+                                    stage_x11->xwin_height);
+        }
+    }
 }
 
 static void
@@ -915,6 +934,7 @@ clutter_stage_x11_init (ClutterStageX11 *stage)
   stage->fullscreening = FALSE;
   stage->is_cursor_visible = TRUE;
   stage->accept_focus = TRUE;
+  stage->scale_factor = 1;
 
   stage->title = NULL;
 

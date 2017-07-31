@@ -398,6 +398,7 @@ clutter_canvas_emit_draw (ClutterCanvas *self)
   unsigned char *data;
   CoglBuffer *buffer;
   int window_scale = 1;
+  gboolean auto_window_scale = FALSE;
   gboolean res;
   cairo_t *cr;
 
@@ -408,9 +409,17 @@ clutter_canvas_emit_draw (ClutterCanvas *self)
   if (priv->scale_factor_set)
     window_scale = priv->scale_factor;
   else
-    g_object_get (clutter_settings_get_default (),
-                  "window-scaling-factor", &window_scale,
-                  NULL);
+    {
+      g_object_get (clutter_settings_get_default (),
+                    "auto-window-scale", &auto_window_scale,
+                    NULL);
+      if (auto_window_scale)
+        {
+          g_object_get (clutter_settings_get_default (),
+                        "window-scaling-factor", &window_scale,
+                        NULL);
+       }
+    }
 
   real_width = priv->width * window_scale;
   real_height = priv->height * window_scale;

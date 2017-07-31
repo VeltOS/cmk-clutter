@@ -79,6 +79,7 @@ struct _ClutterSettings
 
   gint window_scaling_factor;
   gint unscaled_font_dpi;
+  gboolean auto_window_scale;
   guint fixed_scaling_factor : 1;
 };
 
@@ -114,6 +115,7 @@ enum
 
   PROP_WINDOW_SCALING_FACTOR,
   PROP_UNSCALED_FONT_DPI,
+  PROP_AUTO_WINDOW_SCALE,
 
   PROP_LAST
 };
@@ -368,6 +370,11 @@ clutter_settings_set_property (GObject      *gobject,
       settings_update_resolution (self);
       break;
 
+    case PROP_AUTO_WINDOW_SCALE:
+      self->auto_window_scale = g_value_get_boolean (value);
+      g_object_notify_by_pspec (G_OBJECT (self), obj_props[PROP_AUTO_WINDOW_SCALE]);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop_id, pspec);
       break;
@@ -448,6 +455,10 @@ clutter_settings_get_property (GObject    *gobject,
 
     case PROP_WINDOW_SCALING_FACTOR:
       g_value_set_int (value, self->window_scaling_factor);
+      break;
+
+    case PROP_AUTO_WINDOW_SCALE:
+      g_value_set_boolean (value, self->auto_window_scale);
       break;
 
     default:
@@ -685,6 +696,13 @@ clutter_settings_class_init (ClutterSettingsClass *klass)
                       1,
                       CLUTTER_PARAM_READWRITE);
 
+  obj_props[PROP_AUTO_WINDOW_SCALE] =
+    g_param_spec_boolean ("auto-window-scale",
+                          "Auto Window Scale",
+                          "Whether or not Clutter should automatically react to the value of window-scaling-factor.",
+                          TRUE,
+                          CLUTTER_PARAM_READWRITE);
+
   obj_props[PROP_FONTCONFIG_TIMESTAMP] =
     g_param_spec_uint ("fontconfig-timestamp",
                        P_("Fontconfig configuration timestamp"),
@@ -742,6 +760,8 @@ clutter_settings_init (ClutterSettings *self)
   self->xft_rgba = NULL;
 
   self->long_press_duration = 500;
+
+  self->auto_window_scale = TRUE;
 
   /* if the scaling factor was set by the environment we ignore
    * any explicit setting
