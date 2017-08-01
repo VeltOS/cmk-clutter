@@ -1444,6 +1444,30 @@ _clutter_stage_do_pick (ClutterStage   *stage,
   _clutter_stage_do_paint (stage, NULL);
   context->pick_mode = CLUTTER_PICK_NONE;
 
+  /*
+   * FIXME: Performing a pick paint causes the stage to be redrawn
+   * in pick mode. However, it is never painted back in regular mode.
+   * This is normally fine, because any actors that change their
+   * appearance on an event caused by a pick will queue a redraw.
+   *
+   * This is a problem though if no actors queue a redraw yet the stage
+   * must be redrawn; for example, maximizing the window directly after
+   * a pick. It leaves a stage with the previous size's framebuffer,
+   * and consequntly the stage is filled with garbage.
+   *
+   * The redraw from the Expose or ConfigureNotify events (on x11,
+   * similar events on other backends presumably) *should* take care of
+   * this, but apparently they don't. They work when the stage is
+   * drag-resized, but not for large jumps in size like maximize or
+   * manual calls to clutter_actor_set_size(stage).
+   *
+   * _clutter_stage_do_pick seemed to be the only place queueing a
+   * redraw would fix the issue, but it means an extra full stage
+   * redraw on every pick, which is not ideal.
+   */
+  if (!clutter_feature_available (CLUTTER_FEATURE_STAGE_STATIC))
+      clutter_actor_queue_redraw (actor);
+
   /* Read the color of the screen co-ords pixel. RGBA_8888_PRE is used
      even though we don't care about the alpha component because under
      GLES this is the only format that is guaranteed to work so Cogl
